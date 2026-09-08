@@ -1,11 +1,11 @@
 -- ciallo.lua (v1.1)
--- Plays "Ciallo～" whenever YOU push (hold block, press light attack).
+-- Plays "Ciallo~" whenever YOU push (hold block, press light attack).
 -- Rapid pushes overlap: the WAV player keeps a pool of concurrent MCI voices.
 local mod = get_mod("ciallo")
 local AudioPlayer = Mods.file.dofile("ciallo/scripts/mods/ciallo/audio_player")
 
 -- Where the sound lives. The option "sound_path" (Mod Options) overrides this.
-local DEFAULT_SOUND_PATH = "D:/DshWorkSpace/Ciallo～.wav"
+local DEFAULT_SOUND_PATH = "D:/DshWorkSpace/Ciallo~.wav"
 local SOUND_ALIASES = { ".wav", ".mp3" }
 
 local warned = false

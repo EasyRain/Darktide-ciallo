@@ -1,13 +1,13 @@
 return {
     mod_name = {
-        en = "Ciallo～ Push Sound",
-        ["zh-cn"] = "推击音效 Ciallo～",
-        ["zh-tw"] = "推擊音效 Ciallo～",
+        en = "Ciallo~ Push Sound",
+        ["zh-cn"] = "推击音效 Ciallo~",
+        ["zh-tw"] = "推擊音效 Ciallo~",
     },
     mod_description = {
-        en = "Plays Ciallo～ every time you push (hold block, then press light attack). Rapid pushes overlap: each push starts a new layer instead of cutting the previous one. Plays a local audio file from disk through Windows audio APIs.",
-        ["zh-cn"] = "每次推怪（按住右键格挡时点按左键）播放 Ciallo～。快速连推可叠加：每次推击开启新一层音效，不会掐断上一轮。通过 Windows 音频 API 播放本地音频文件。",
-        ["zh-tw"] = "每次推怪（按住右鍵格擋時點按左鍵）播放 Ciallo～。快速連推可疊加：每次推擊開啟新一層音效，不會掐斷上一輪。透過 Windows 音訊 API 播放本機音訊檔。",
+        en = "Plays Ciallo~ every time you push (hold block, then press light attack). Rapid pushes overlap: each push starts a new layer instead of cutting the previous one. Plays a local audio file from disk through Windows audio APIs.",
+        ["zh-cn"] = "每次推怪（按住右键格挡时点按左键）播放 Ciallo~。快速连推可叠加：每次推击开启新一层音效，不会掐断上一轮。通过 Windows 音频 API 播放本地音频文件。",
+        ["zh-tw"] = "每次推怪（按住右鍵格擋時點按左鍵）播放 Ciallo~。快速連推可疊加：每次推擊開啟新一層音效，不會掐斷上一輪。透過 Windows 音訊 API 播放本機音訊檔。",
     },
     sound_path = {
         en = "Sound file path (WAV recommended; MP3 supported)",

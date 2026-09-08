@@ -1,6 +1,6 @@
-# Ciallo～ Push Sound
+# Ciallo~ Push Sound
 
-A tiny Darktide mod: plays **Ciallo～** every time you **push** (hold right mouse button to block, then press left mouse button).
+A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse button to block, then press left mouse button).
 
 ## How it works
 
@@ -19,8 +19,8 @@ A tiny Darktide mod: plays **Ciallo～** every time you **push** (hold right mou
 1. Copy the `ciallo` folder into your game's `mods` folder.
 2. Add `ciallo` to `mods\mod_load_order.txt`.
 3. Put a **WAV** (recommended) or real **MP3** file somewhere on disk.
-4. In Mod Options → Ciallo～ Push Sound, set `Sound file path` to your file
-   (or name it `Ciallo～.wav` — the mod auto-tries `.wav`/`.mp3` variants of the
+4. In Mod Options → Ciallo~ Push Sound, set `Sound file path` to your file
+   (or name it `Ciallo~.wav` — the mod auto-tries `.wav`/`.mp3` variants of the
    configured path).
 5. Press the **Test sound** button to verify, then go push some heretics.
 
