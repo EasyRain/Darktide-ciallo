@@ -18,11 +18,14 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
 
 1. Copy the `ciallo` folder into your game's `mods` folder.
 2. Add `ciallo` to `mods\mod_load_order.txt`.
-3. Put a **WAV** (recommended) or real **MP3** file somewhere on disk.
-4. In Mod Options → Ciallo~ Push Sound, set `Sound file path` to your file
-   (or name it `Ciallo~.wav` — the mod auto-tries `.wav`/`.mp3` variants of the
-   configured path).
-5. Press the **Test sound** button to verify, then go push some heretics.
+3. Launch and press the **Test sound** button in Mod Options — the sound ships
+   inside the mod at `assets\Ciallo~.wav`, so it works out of the box.
+4. To use your own sound file, set `Sound file path` in Mod Options to any
+   **absolute** path on disk (e.g. `D:/Sounds/ciallo.wav`); leave it at the
+   default (`../mods/ciallo/assets/Ciallo~.wav`) to keep using the bundled file.
+   If a configured file is missing, the mod auto-tries `.wav`/`.mp3` variants of
+   that path.
+5. Go push some heretics.
 
 > **Note about the file name:** avoid characters the in-game font cannot render
 > (e.g. `∠`, `ω`, `☆`) in the path — they show as boxes in the option field and
@@ -61,5 +64,6 @@ restart the game — the native backend is picked up automatically.
 - **Overlap**: the WAV player keeps a pool of concurrent voices (default 4), so
   rapid pushes layer on top of each other instead of cutting off the previous
   sound. MP3 keeps a single instance (restarts each push).
-- The sound file is not bundled with the mod; provide your own.
+- The sound ships with the mod at `assets\Ciallo~.wav`; replace it in place or
+  point the `Sound file path` option at your own file.
 - License: MIT

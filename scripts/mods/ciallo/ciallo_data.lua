@@ -9,7 +9,7 @@ return {
             {
                 setting_id = "sound_path",
                 type = "text",
-                default_value = "D:/DshWorkSpace/Ciallo~.wav",
+                default_value = "../mods/ciallo/assets/Ciallo~.wav",
                 max_length = 512,
             },
             {

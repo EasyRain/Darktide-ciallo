@@ -4,8 +4,9 @@
 local mod = get_mod("ciallo")
 local AudioPlayer = Mods.file.dofile("ciallo/scripts/mods/ciallo/audio_player")
 
--- Where the sound lives. The option "sound_path" (Mod Options) overrides this.
-local DEFAULT_SOUND_PATH = "D:/DshWorkSpace/Ciallo~.wav"
+-- Default sound: a copy shipped inside the mod (assets/Ciallo~.wav).
+-- Override it anytime with the "sound_path" option (absolute path allowed).
+local DEFAULT_SOUND_PATH = "../mods/ciallo/assets/Ciallo~.wav"
 local SOUND_ALIASES = { ".wav", ".mp3" }
 
 local warned = false
