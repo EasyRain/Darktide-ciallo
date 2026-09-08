@@ -6,11 +6,13 @@ A tiny Darktide mod: plays **Ciallo～(∠・ω- )⌒☆** every time you **push
 
 - Hooks `ActionPush.start` (the melee push action) and plays only for your own
   local player, skipping prediction re-simulation so it fires once per real push.
-- The audio file is played **from disk** with Windows audio APIs through LuaJIT
-  FFI (`winmm.dll`) — no custom DLL, no wwise authoring:
-  - **WAV** → `PlaySound` (async)
-  - **MP3 / other** → MCI (`mciSendString`, DirectShow)
-- Non-ASCII paths are supported (UTF-16 conversion).
+- Audio is played **from disk** with one of two backends (auto-detected at load):
+  - **Native (preferred):** `bin/ciallo_sfx.dll` — a small C DLL that plays
+    overlapping WAV voices through winmm `waveOut` (one waveOut handle per
+    voice, mixed by the OS). Low latency, real polyphony, no callbacks.
+  - **Fallback:** LuaJIT FFI straight into `winmm.dll` — a pool of concurrent
+    MCI `waveaudio` instances (WAV) or a single MCI instance (MP3/other).
+- Non-ASCII paths are supported.
 
 ## Install
 
@@ -26,6 +28,19 @@ A tiny Darktide mod: plays **Ciallo～(∠・ω- )⌒☆** every time you **push
 > MP3 — check that it is genuine MPEG audio. MP4/M4A (AAC) files mislabeled as
 > `.mp3` will not play through MCI. Convert to WAV for the most reliable result
 > (e.g. with ffmpeg: `ffmpeg -i in.mp3 out.wav`).
+
+## Building the native DLL (optional)
+
+The mod works without the DLL (MCI fallback). To build `ciallo_sfx.dll`
+(needs Visual Studio with the Windows SDK, x64):
+
+```bat
+call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+cl /nologo /O2 /LD /utf-8 src\ciallo_sfx.c /Fe:bin\ciallo_sfx.dll /link winmm.lib
+```
+
+Then copy `bin\ciallo_sfx.dll` into your installed mod's `bin\` folder and
+restart the game — the native backend is picked up automatically.
 
 ## Options
 

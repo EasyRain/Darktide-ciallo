@@ -1,5 +1,9 @@
 *.mp3
 *.wav
 *.log
+*.dll
+*.lib
+*.obj
+*.exp
 .DS_Store
 Thumbs.db

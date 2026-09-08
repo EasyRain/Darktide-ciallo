@@ -244,15 +244,15 @@ static int start_voice(int i) {
 
 /* ---- exported API ------------------------------------------------------ */
 
-int __cdecl ciallo_available(void) {
+__declspec(dllexport) int __cdecl ciallo_available(void) {
     return 1;
 }
 
-const char *__cdecl ciallo_error(void) {
+__declspec(dllexport) const char *__cdecl ciallo_error(void) {
     return g_error[0] ? g_error : NULL;
 }
 
-int __cdecl ciallo_init(int max_voices, int volume_percent) {
+__declspec(dllexport) int __cdecl ciallo_init(int max_voices, int volume_percent) {
     if (max_voices < 1)
         max_voices = 1;
     if (max_voices > MAX_VOICES)
@@ -263,7 +263,7 @@ int __cdecl ciallo_init(int max_voices, int volume_percent) {
     return 1;
 }
 
-int __cdecl ciallo_play(const char *utf8_path) {
+__declspec(dllexport) int __cdecl ciallo_play(const char *utf8_path) {
     if (!g_initialized)
         ciallo_init(4, 100);
     if (!utf8_path || !utf8_path[0]) {
@@ -292,7 +292,7 @@ int __cdecl ciallo_play(const char *utf8_path) {
     return start_voice(i);
 }
 
-void __cdecl ciallo_set_volume(int percent) {
+__declspec(dllexport) void __cdecl ciallo_set_volume(int percent) {
     g_volume_percent = percent < 0 ? 0 : (percent > 100 ? 100 : percent);
     DWORD vol = (DWORD)((g_volume_percent * 0xFFFFu) / 100u);
     for (int i = 0; i < MAX_VOICES; i++) {
@@ -302,7 +302,7 @@ void __cdecl ciallo_set_volume(int percent) {
     }
 }
 
-void __cdecl ciallo_shutdown(void) {
+__declspec(dllexport) void __cdecl ciallo_shutdown(void) {
     full_teardown();
     g_initialized = 0;
 }
