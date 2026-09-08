@@ -1,6 +1,6 @@
-# Ciallo～(∠・ω- )⌒☆ Push Sound
+# Ciallo～ Push Sound
 
-A tiny Darktide mod: plays **Ciallo～(∠・ω- )⌒☆** every time you **push** (hold right mouse button to block, then press left mouse button).
+A tiny Darktide mod: plays **Ciallo～** every time you **push** (hold right mouse button to block, then press left mouse button).
 
 ## How it works
 
@@ -19,11 +19,15 @@ A tiny Darktide mod: plays **Ciallo～(∠・ω- )⌒☆** every time you **push
 1. Copy the `ciallo` folder into your game's `mods` folder.
 2. Add `ciallo` to `mods\mod_load_order.txt`.
 3. Put a **WAV** (recommended) or real **MP3** file somewhere on disk.
-4. In Mod Options → Ciallo Push Sound, set `Sound file path` to your file
-   (or name it `Ciallo～(∠・ω- )⌒☆.wav` next to the `.mp3` of the same name —
-   the mod auto-tries `.wav`/`.mp3` variants of the configured path).
+4. In Mod Options → Ciallo～ Push Sound, set `Sound file path` to your file
+   (or name it `Ciallo～.wav` — the mod auto-tries `.wav`/`.mp3` variants of the
+   configured path).
 5. Press the **Test sound** button to verify, then go push some heretics.
 
+> **Note about the file name:** avoid characters the in-game font cannot render
+> (e.g. `∠`, `ω`, `☆`) in the path — they show as boxes in the option field and
+> can corrupt the saved path string. Plain ASCII or CJK file names are safest.
+>
 > **Note about formats:** a file with a `.mp3` extension is not necessarily an
 > MP3 — check that it is genuine MPEG audio. MP4/M4A (AAC) files mislabeled as
 > `.mp3` will not play through MCI. Convert to WAV for the most reliable result
@@ -54,6 +58,8 @@ restart the game — the native backend is picked up automatically.
 ## Notes
 
 - Sound is only played for **your own** pushes (bots/husk/remote players are ignored).
-- **Overlap**: the WAV player keeps a pool of concurrent MCI `waveaudio` instances (default 4), so rapid pushes layer on top of each other instead of cutting off the previous sound. MP3 keeps a single instance (restarts each push).
+- **Overlap**: the WAV player keeps a pool of concurrent voices (default 4), so
+  rapid pushes layer on top of each other instead of cutting off the previous
+  sound. MP3 keeps a single instance (restarts each push).
 - The sound file is not bundled with the mod; provide your own.
 - License: MIT

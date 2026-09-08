@@ -1,13 +1,13 @@
 return {
     mod_name = {
-        en = "Ciallo～(∠・ω- )⌒☆ Push Sound",
-        ["zh-cn"] = "推击音效 Ciallo～(∠・ω- )⌒☆",
-        ["zh-tw"] = "推擊音效 Ciallo～(∠・ω- )⌒☆",
+        en = "Ciallo～ Push Sound",
+        ["zh-cn"] = "推击音效 Ciallo～",
+        ["zh-tw"] = "推擊音效 Ciallo～",
     },
     mod_description = {
-        en = "Plays Ciallo～(∠・ω- )⌒☆ every time you push (hold block, then press light attack). Rapid pushes overlap: each push starts a new layer instead of cutting the previous one. Plays a local audio file from disk through Windows audio APIs.",
-        ["zh-cn"] = "每次推怪（按住右键格挡时点按左键）播放 Ciallo～(∠・ω- )⌒☆。快速连推可叠加：每次推击开启新一层音效，不会掐断上一轮。通过 Windows 音频 API 播放本地音频文件。",
-        ["zh-tw"] = "每次推怪（按住右鍵格擋時點按左鍵）播放 Ciallo～(∠・ω- )⌒☆。快速連推可疊加：每次推擊開啟新一層音效，不會掐斷上一輪。透過 Windows 音訊 API 播放本機音訊檔。",
+        en = "Plays Ciallo～ every time you push (hold block, then press light attack). Rapid pushes overlap: each push starts a new layer instead of cutting the previous one. Plays a local audio file from disk through Windows audio APIs.",
+        ["zh-cn"] = "每次推怪（按住右键格挡时点按左键）播放 Ciallo～。快速连推可叠加：每次推击开启新一层音效，不会掐断上一轮。通过 Windows 音频 API 播放本地音频文件。",
+        ["zh-tw"] = "每次推怪（按住右鍵格擋時點按左鍵）播放 Ciallo～。快速連推可疊加：每次推擊開啟新一層音效，不會掐斷上一輪。透過 Windows 音訊 API 播放本機音訊檔。",
     },
     sound_path = {
         en = "Sound file path (WAV recommended; MP3 supported)",
@@ -15,9 +15,9 @@ return {
         ["zh-tw"] = "音訊檔案路徑（推薦 WAV，支援 MP3）",
     },
     sound_path_description = {
-        en = "Full path to the sound file. WAV plays through PlaySound; other formats (MP3...) play through MCI. If the file is missing, a .wav/.mp3 variant of the same path is tried automatically.",
-        ["zh-cn"] = "音频文件的完整路径。WAV 走 PlaySound，其他格式（MP3 等）走 MCI。若文件不存在，会自动尝试同路径的 .wav/.mp3 变体。",
-        ["zh-tw"] = "音訊檔的完整路徑。WAV 走 PlaySound，其他格式（MP3 等）走 MCI。若檔案不存在，會自動嘗試同路徑的 .wav/.mp3 變體。",
+        en = "Full path to the sound file (WAV recommended; MP3 supported). If the file is missing, a .wav/.mp3 variant of the same path is tried automatically.",
+        ["zh-cn"] = "音频文件的完整路径（推荐 WAV，支持 MP3）。若文件不存在，会自动尝试同路径的 .wav/.mp3 变体。",
+        ["zh-tw"] = "音訊檔的完整路徑（推薦 WAV，支援 MP3）。若檔案不存在，會自動嘗試同路徑的 .wav/.mp3 變體。",
     },
     volume = {
         en = "Volume (MP3 path only)",

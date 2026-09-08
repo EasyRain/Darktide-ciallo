@@ -9,7 +9,7 @@ return {
             {
                 setting_id = "sound_path",
                 type = "text",
-                default_value = "D:/DshWorkSpace/Ciallo～(∠・ω- )⌒☆.wav",
+                default_value = "D:/DshWorkSpace/Ciallo～.wav",
                 max_length = 512,
             },
             {
