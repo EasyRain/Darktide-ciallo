@@ -118,7 +118,7 @@ local function patch()
         mod:warning("Could not hook ActionPush.start. Push sound disabled.")
         return false
     end
-    mod:info("Ciallo push sound armed. Sound: " .. tostring(resolve_sound_path() or "FILE MISSING"))
+    mod:info("Ciallo push sound armed. Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
     return true
 end
 
