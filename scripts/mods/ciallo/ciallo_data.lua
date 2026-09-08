@@ -29,6 +29,7 @@ return {
             {
                 setting_id = "test_sound",
                 type = "button",
+                button_text = "test_sound",
                 function_name = "play_test_sound",
             },
             {
