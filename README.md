@@ -4,8 +4,19 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
 
 ## How it works
 
-- Hooks `ActionPush.start` (the melee push action) and plays only for your own
-  local player, skipping prediction re-simulation so it fires once per real push.
+- Hooks `ActionPush._push` — the moment the game **actually executes** the push
+  attack — and plays only for your own local player, skipping prediction
+  re-simulation so it fires once per real push.
+  Why `_push` and not `ActionPush.start`? `start` runs the instant you press
+  light attack (the wind-up/charge begins), even when no push will come out:
+  stamina broken, staggered mid-block, or charge-type pushes (e.g. psyker force
+  swords, which must be held ~0.5 s to charge and cancel if released early).
+  `_push` only runs when the push reaches its `damage_time` on `fixed_update`,
+  i.e. when the push really goes out. Failed / cancelled pushes never reach it,
+  so no sound plays for them.
+- If a game update ever renames `ActionPush` internals, the mod falls back to
+  hooking `PushAttack.push`, the lowest-level "push really went out" utility
+  (logged at load in the console).
 - Audio is played **from disk** with one of two backends (auto-detected at load):
   - **Native (preferred):** `bin/ciallo_sfx.dll` — a small C DLL that plays
     overlapping WAV voices through winmm `waveOut` (one waveOut handle per

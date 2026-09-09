@@ -1,6 +1,16 @@
--- ciallo.lua (v1.1)
--- Plays "Ciallo~" whenever YOU push (hold block, press light attack).
--- Rapid pushes overlap: the WAV player keeps a pool of concurrent MCI voices.
+-- ciallo.lua (v1.2)
+-- Plays "Ciallo~" whenever YOUR push actually lands (the game executes the
+-- push attack). Rapid pushes overlap: the WAV player keeps a pool of
+-- concurrent MCI voices.
+--
+-- IMPORTANT (timing): we hook ActionPush._push, NOT ActionPush.start.
+--   start  = the push ACTION begins (charges/wind-up; happens on button press,
+--            even if the push will fail or be cancelled).
+--   _push  = the game actually executes the push (reach damage_time on
+--            fixed_update). It never runs for failed pushes (stamina broken /
+--            staggered mid-block) or for charge-type pushes released early
+--            (e.g. force swords: hold ~0.5s to charge, release early = cancel).
+-- So hooking _push plays the sound only when a push really goes out.
 local mod = get_mod("ciallo")
 local AudioPlayer = Mods.file.dofile("ciallo/scripts/mods/ciallo/audio_player")
 
@@ -73,23 +83,32 @@ local function play_push_sound()
     end
 end
 
--- Is the unit that is performing the action our own local player?
-local function is_local_player_unit(action_self)
-    local player_unit = action_self and action_self._player_unit
-    if not player_unit then
+-- Is the given unit our own local player?
+local function is_local_unit(unit)
+    if not unit then
         return false
     end
     local local_player = Managers.player and Managers.player:local_player(1)
     local local_unit = local_player and local_player.player_unit
-    if local_unit == player_unit then
+    return local_unit == unit
+end
+
+-- Is the unit that is performing the action our own local player?
+local function is_local_player_unit(action_self)
+    local player_unit = action_self and action_self._player_unit
+    if player_unit and is_local_unit(player_unit) then
         return true
     end
     -- fallback: the action's player channel is the local one
-    local player = action_self._player
+    local local_player = Managers.player and Managers.player:local_player(1)
+    local player = action_self and action_self._player
     return player ~= nil and local_player ~= nil and player == local_player
 end
 
-local function on_push_start(action_self)
+-- Called when the push attack is actually executed (ActionPush._push ran).
+-- start fires on button press (charge/wind-up begins) even for pushes that
+-- will fail or be cancelled, so we deliberately listen to _push instead.
+local function on_push_executed(action_self)
     if not mod:is_enabled() then
         return
     end
@@ -104,23 +123,61 @@ local function on_push_start(action_self)
     play_push_sound()
 end
 
+-- Fallback hook: PushAttack.push is the lowest level "the push really went
+-- out" call (physics + damage). It only runs on non-resimulating executions,
+-- so no extra resimulating check is needed here.
+local function on_push_attack_executed(...)
+    if not mod:is_enabled() then
+        return
+    end
+    -- PushAttack.push(physics_world, push_position, push_direction, rewind_ms,
+    --                 power_level, push_settings, attacking_unit, is_predicted,
+    --                 weapon_item, weak_push)
+    local attacking_unit = select(7, ...)
+    if not is_local_unit(attacking_unit) then
+        return
+    end
+    play_push_sound()
+end
+
+-- Hook the point where the game actually executes the push.
+-- Strategy (primary -> fallback):
+--   1. ActionPush._push      - runs only when a push action reaches its
+--                              damage_time (charged pushes: only when fully
+--                              charged; failed/cancelled pushes never get here)
+--   2. PushAttack.push       - lowest-level "push really went out" utility.
+--                              Used as fallback in case a game update renames
+--                              ActionPush internals.
 local function patch()
+    -- Primary: ActionPush._push
     local ok, ActionPush = pcall(require, "scripts/extension_systems/weapon/actions/action_push")
-    if not ok or type(ActionPush) ~= "table" then
-        mod:warning("Could not load ActionPush (game update changed it?). Push sound disabled. Error: " .. tostring(ActionPush))
+    if ok and type(ActionPush) == "table" and type(ActionPush._push) == "function" then
+        local hooked = pcall(mod.hook_safe, mod, ActionPush, "_push", on_push_executed)
+        if hooked then
+            mod:info("Ciallo push sound armed (ActionPush._push). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
+            return true
+        end
+        mod:warning("Could not hook ActionPush._push. Trying lower-level fallback.")
+    elseif ok and type(ActionPush) == "table" then
+        mod:warning("ActionPush has no '_push' method in this game version. Trying lower-level fallback.")
+    else
+        mod:warning("Could not load ActionPush (game update changed it?). Trying lower-level fallback. Error: " .. tostring(ActionPush))
+    end
+
+    -- Fallback: PushAttack.push
+    local ok2, PushAttack = pcall(require, "scripts/utilities/attack/push_attack")
+    if ok2 and type(PushAttack) == "table" and type(PushAttack.push) == "function" then
+        local hooked2 = pcall(mod.hook_safe, mod, PushAttack, "push", on_push_attack_executed)
+        if hooked2 then
+            mod:info("Ciallo push sound armed (PushAttack.push fallback). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
+            return true
+        end
+        mod:warning("Could not hook PushAttack.push. Push sound disabled.")
         return false
     end
-    if type(ActionPush.start) ~= "function" then
-        mod:warning("ActionPush has no 'start' method. Push sound disabled.")
-        return false
-    end
-    local hooked = pcall(mod.hook_safe, mod, ActionPush, "start", on_push_start)
-    if not hooked then
-        mod:warning("Could not hook ActionPush.start. Push sound disabled.")
-        return false
-    end
-    mod:info("Ciallo push sound armed. Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
-    return true
+
+    mod:warning("Could not find any push hook target (ActionPush / PushAttack). Push sound disabled.")
+    return false
 end
 
 -- Called by the "Test sound" button in Mod Options.

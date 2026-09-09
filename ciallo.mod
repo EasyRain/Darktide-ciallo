@@ -1,5 +1,5 @@
 -- ciallo.mod
--- Plays "Ciallo~" when you push (hold block + light attack).
+-- Plays "Ciallo~" when your push actually goes out (hold block + light attack).
 return {
     run = function()
         fassert(rawget(_G, "new_mod"), "`ciallo` needs Darktide Mod Framework.")
@@ -10,5 +10,5 @@ return {
         })
     end,
     packages = {},
-    version = "1.0.0",
+    version = "1.1.0",
 }
