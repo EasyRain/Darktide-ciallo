@@ -102,6 +102,12 @@ check("file_exists finds the bundled sound", AudioPlayer.file_exists("assets/Cia
 check("file_exists rejects a folder", AudioPlayer.file_exists("assets/sfx") == false, "")
 check("file_exists rejects a missing file", AudioPlayer.file_exists("assets/nope.wav") == false, "")
 
+-- routing rule: only .wav may go to the native player, everything else goes through MCI
+check("is_wav accepts .wav", AudioPlayer.is_wav("a/b/clip_01.wav") == true, "")
+check("is_wav accepts .WAV", AudioPlayer.is_wav("CLIP.WAV") == true, "")
+check("is_wav rejects .mp3", AudioPlayer.is_wav("a/b/song.mp3") == false, "")
+check("is_wav rejects nil", AudioPlayer.is_wav(nil) == false, "")
+
 if failures > 0 then
     print(string.format("\n%d CHECK(S) FAILED", failures))
     os.exit(1)

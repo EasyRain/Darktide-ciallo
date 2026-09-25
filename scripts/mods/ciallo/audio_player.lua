@@ -355,6 +355,12 @@ elseif init_ffi() then
     M.available = true
 end
 
+-- The native player only understands RIFF/WAVE files; anything else (mp3, ...) has to go
+-- through MCI, which is also why the fallback is brought up lazily when needed.
+function M.is_wav(path)
+    return path ~= nil and path:lower():sub(-4) == ".wav"
+end
+
 function M.play(path)
     if not M.available then
         return false
@@ -363,13 +369,20 @@ function M.play(path)
         M.last_error = "no sound path configured"
         return false
     end
-    if M.backend == "native" then
+    if M.backend == "native" and native and M.is_wav(path) then
         local rc = native.ciallo_play(path)
         if rc ~= 1 then
             local ok, err = pcall(native.ciallo_error)
             M.last_error = (ok and err) or "native play failed"
         end
         return rc == 1
+    end
+    if not winmm then
+        -- the native backend skips init_ffi(), so the MCI side may not be up yet
+        if not init_ffi() then
+            M.last_error = M.last_error or "the MCI fallback is unavailable"
+            return false
+        end
     end
     return mci_play(path)
 end
@@ -378,8 +391,8 @@ function M.set_volume(percent)
     M._volume = tonumber(percent) or 100
     if M.backend == "native" and native then
         pcall(native.ciallo_set_volume, M._volume)
-        return
     end
+    -- also covers files played through MCI on a machine that has the DLL (mp3 and friends)
     for i = 1, #M._wav_aliases do
         set_alias_volume(M._wav_aliases[i])
     end
@@ -409,7 +422,6 @@ end
 function M.close()
     if M.backend == "native" and native then
         pcall(native.ciallo_shutdown)
-        return
     end
     M.close_wav_pool()
     if M._mp3_alias then
