@@ -15,9 +15,9 @@ return {
         ["zh-tw"] = "音效檔案或資料夾（推薦 WAV，支援 MP3）",
     },
     sound_path_description = {
-        en = "A single file plays that file on every push. A folder plays a random .wav/.mp3 from it, without repeating until every file in the folder has been played once; subfolders are not scanned. If nothing is found there, the sounds shipped with the mod are used.",
-        ["zh-cn"] = "填一个文件：每次都播它。填一个文件夹：从里面随机播 .wav/.mp3，一轮之内不重复（整个文件夹都放过一遍之后才重新开始）；只扫描该文件夹本身，不进入子文件夹。路径找不到东西时，回退到 mod 自带的音效。",
-        ["zh-tw"] = "填一個檔案：每次都播它。填一個資料夾：從裡面隨機播 .wav/.mp3，一輪之內不重複（整個資料夾都放過一遍之後才重新開始）；只掃描該資料夾本身，不進入子資料夾。路徑找不到東西時，回退到 mod 自帶的音效。",
+        en = "A file plays that file every push. A folder plays a random .wav/.mp3 from it, without repeats until every file has been played once (subfolders are not scanned). Leave it empty, or point it at a missing path, to use the sounds shipped with the mod.",
+        ["zh-cn"] = "填文件：每次都播它。填文件夹：从里面随机播 .wav/.mp3，一轮之内不重复（不扫描子文件夹）。留空或路径无效时，使用 mod 自带的音效。",
+        ["zh-tw"] = "填檔案：每次都播它。填資料夾：從裡面隨機播 .wav/.mp3，一輪之內不重複（不掃描子資料夾）。留空或路徑無效時，使用 mod 自帶的音效。",
     },
     volume = {
         en = "Volume",
