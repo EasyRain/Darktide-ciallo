@@ -19,8 +19,7 @@ local SoundPool = Mods.file.dofile("ciallo/scripts/mods/ciallo/sound_pool")
 --   a file   -> that file, every push
 --   a folder -> a random .wav/.mp3 inside it (shuffled bag: nothing repeats until the
 --               whole folder has been used once)
--- Both fall back to the sounds shipped inside the mod.
-local DEFAULT_SOUND_PATH = "../mods/ciallo/assets/Ciallo~.wav"
+-- Anything that does not resolve falls back to the collection shipped inside the mod.
 local DEFAULT_SOUND_FOLDER = "../mods/ciallo/assets/sfx"
 local SOUND_ALIASES = { ".wav", ".mp3" }
 
@@ -75,17 +74,11 @@ local function build_pool()
         return true
     end
 
-    -- nothing usable there: fall back to the bundled sounds
-    local default_file = resolve_sound_file(DEFAULT_SOUND_PATH)
-    if default_file then
-        pool:set_single(default_file)
-        dbg("sound: falling back to %s (%s)", default_file, tostring(reason))
-        return true
-    end
+    -- nothing usable there: fall back to the collection shipped inside the mod
     local default_files = AudioPlayer.list_sounds(DEFAULT_SOUND_FOLDER)
     if default_files and #default_files > 0 then
         pool:set_files(default_files)
-        dbg("sound: falling back to %d bundled sounds", #default_files)
+        dbg("sound: falling back to %d bundled sounds (%s)", #default_files, tostring(reason))
         return true
     end
 

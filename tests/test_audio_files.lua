@@ -56,7 +56,7 @@ local scripts = AudioPlayer.list_sounds("scripts")
 check("a folder without audio returns nil", scripts == nil, tostring(scripts))
 local missing = AudioPlayer.list_sounds("assets/does-not-exist")
 check("a missing folder returns nil", missing == nil, tostring(missing))
-local as_file = AudioPlayer.list_sounds("assets/Ciallo~.wav")
+local as_file = AudioPlayer.list_sounds("assets/sfx/clip_01.wav")
 check("a file path is not treated as a folder", as_file == nil, tostring(as_file))
 
 -- subfolders must NOT be scanned: only the files directly inside the given folder
@@ -98,7 +98,7 @@ do
 end
 
 -- the single-file check the mod uses for "is this a file?"
-check("file_exists finds the bundled sound", AudioPlayer.file_exists("assets/Ciallo~.wav") == true, "")
+check("file_exists finds a shipped clip", AudioPlayer.file_exists("assets/sfx/clip_01.wav") == true, "")
 check("file_exists rejects a folder", AudioPlayer.file_exists("assets/sfx") == false, "")
 check("file_exists rejects a missing file", AudioPlayer.file_exists("assets/nope.wav") == false, "")
 

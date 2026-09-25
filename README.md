@@ -38,9 +38,9 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
 
 1. Copy the `ciallo` folder into your game's `mods` folder.
 2. Add `ciallo` to `mods\mod_load_order.txt`.
-3. Launch and press the **Test sound** button in Mod Options — 18 sounds ship inside the
-   mod in `assets\sfx` (plus the original `assets\Ciallo~.wav`), and the default option value
-   points at that folder, so it works out of the box and rotates through them.
+3. Launch and press the **Test sound** button in Mod Options — 12 sounds ship inside the
+   mod in `assets\sfx`, and the default option value points at that folder, so it works out of
+   the box and rotates through them.
 4. To use your own sounds, set `Sound file or folder` in Mod Options to any **absolute** path
    on disk: an audio file (e.g. `D:/Sounds/ciallo.wav`) to always play that one, or a folder
    (e.g. `D:/Sounds/ciallo`) to play a random file from it. A file path that is missing still
@@ -92,9 +92,9 @@ powershell -NoProfile -File tests\run_tests.ps1 -RebuildDll
 - **Overlap**: the WAV player keeps a pool of concurrent voices (default 4), so
   rapid pushes layer on top of each other instead of cutting off the previous
   sound. MP3 keeps a single instance (restarts each push).
-- 18 sounds ship in `assets\sfx`; the original `assets\Ciallo~.wav` is kept as the
-  bundled single-file fallback. Point the option at a file to always hear that file, or at any
-  folder of your own `.wav`/`.mp3` files to rotate through those.
+- 12 sounds ship in `assets\sfx` (44.1 kHz stereo, untouched). Point the option at a file to
+  always hear that file, or at any folder of your own `.wav`/`.mp3` files to rotate through
+  those.
 - **Updating from 1.1.0 or earlier:** those builds set the volume through the
   audio session, so your Darktide level in the Windows volume mixer may have
   been left at the last mod volume you used (that is also why the game's music
