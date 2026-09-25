@@ -307,6 +307,8 @@ end
 
 -- Returns an array of full paths (dir + "/" + name) of the .wav/.mp3 files in dir,
 -- or nil + reason. Only used when the configured path is not a file.
+-- Only the folder itself is scanned: subfolders are skipped (no recursion), so pointing
+-- the option at a folder never picks up sounds from folders inside it.
 function M.list_sounds(dir)
     if not dir or dir == "" then
         return nil, "no path"

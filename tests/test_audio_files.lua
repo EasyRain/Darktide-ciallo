@@ -59,6 +59,44 @@ check("a missing folder returns nil", missing == nil, tostring(missing))
 local as_file = AudioPlayer.list_sounds("assets/Ciallo~.wav")
 check("a file path is not treated as a folder", as_file == nil, tostring(as_file))
 
+-- subfolders must NOT be scanned: only the files directly inside the given folder
+do
+    local temp = (os.getenv("TEMP") or ".") .. "\\ciallo_scan_test"
+    os.execute('rmdir /s /q "' .. temp .. '" >nul 2>nul')
+    os.execute('mkdir "' .. temp .. '" >nul 2>nul')
+    os.execute('mkdir "' .. temp .. '\\sub" >nul 2>nul')
+    os.execute('mkdir "' .. temp .. '\\sub\\deeper" >nul 2>nul')
+    local function touch(path)
+        local handle = io.open(path, "wb")
+        if handle then
+            handle:write("x")
+            handle:close()
+        end
+    end
+    touch(temp .. "\\top_1.wav")
+    touch(temp .. "\\top_2.mp3")
+    touch(temp .. "\\notes.txt")
+    touch(temp .. "\\sub\\nested.wav")
+    touch(temp .. "\\sub\\deeper\\nested2.wav")
+
+    local listed = AudioPlayer.list_sounds(temp)
+    local names = {}
+    if type(listed) == "table" then
+        for _, path in ipairs(listed) do
+            names[#names + 1] = path:match("[^/]+$")
+        end
+    end
+    check("only the folder's own files are listed", type(listed) == "table" and #listed == 2, table.concat(names, ","))
+    local leaked = false
+    for _, name in ipairs(names) do
+        if name == "nested.wav" or name == "nested2.wav" then
+            leaked = true
+        end
+    end
+    check("no file from a subfolder leaks in", not leaked, "")
+    os.execute('rmdir /s /q "' .. temp .. '" >nul 2>nul')
+end
+
 -- the single-file check the mod uses for "is this a file?"
 check("file_exists finds the bundled sound", AudioPlayer.file_exists("assets/Ciallo~.wav") == true, "")
 check("file_exists rejects a folder", AudioPlayer.file_exists("assets/sfx") == false, "")

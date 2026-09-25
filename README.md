@@ -26,6 +26,7 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
 - **Which sound plays** is decided by the `Sound file or folder` option: a *file* plays that
   file on every push, a *folder* plays a random `.wav`/`.mp3` inside it. The folder mode uses
   a shuffled bag, so nothing repeats until every sound in the folder has been played once.
+  Only the folder itself is scanned — subfolders are ignored.
   The mod ships its own collection in `assets\sfx` and points there by default.
 - **Volume** (0–100) is applied by scaling the samples in software, on both
   backends. The native player deliberately does **not** call `waveOutSetVolume`:
