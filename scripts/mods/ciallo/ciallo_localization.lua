@@ -5,19 +5,19 @@ return {
         ["zh-tw"] = "推擊音效 Ciallo~",
     },
     mod_description = {
-        en = "Plays Ciallo~ every time you push. Plays a local audio file through Windows audio APIs.",
-        ["zh-cn"] = "每次推怪播放 Ciallo~。通过 Windows 音频 API 播放本地音频文件。",
-        ["zh-tw"] = "每次推怪播放 Ciallo~。透過 Windows 音訊 API 播放本機音訊檔。",
+        en = "Plays Ciallo~ every time you push. Plays a local sound through Windows audio APIs: one fixed file, or a random one from a folder.",
+        ["zh-cn"] = "每次推怪播放 Ciallo~。通过 Windows 音频 API 播放本地音效：可以是固定的一个文件，也可以从文件夹里随机播放。",
+        ["zh-tw"] = "每次推怪播放 Ciallo~。透過 Windows 音訊 API 播放本機音效：可以是固定的一個檔案，也可以從資料夾裡隨機播放。",
     },
     sound_path = {
-        en = "Sound file path (WAV recommended; MP3 supported)",
-        ["zh-cn"] = "音频文件路径（推荐 WAV，支持 MP3）",
-        ["zh-tw"] = "音訊檔案路徑（推薦 WAV，支援 MP3）",
+        en = "Sound file or folder (WAV recommended; MP3 supported)",
+        ["zh-cn"] = "音效文件或文件夹（推荐 WAV，支持 MP3）",
+        ["zh-tw"] = "音效檔案或資料夾（推薦 WAV，支援 MP3）",
     },
     sound_path_description = {
-        en = "If the file is missing, a .wav/.mp3 variant of the same path is tried automatically.",
-        ["zh-cn"] = "若文件不存在，会自动尝试同路径的 .wav/.mp3 变体。",
-        ["zh-tw"] = "若檔案不存在，會自動嘗試同路徑的 .wav/.mp3 變體。",
+        en = "A single file plays that file on every push. A folder plays a random .wav/.mp3 from it, without repeating until every file in the folder has been played once. If nothing is found there, the sounds shipped with the mod are used.",
+        ["zh-cn"] = "填一个文件：每次都播它。填一个文件夹：从里面随机播 .wav/.mp3，一轮之内不重复（整个文件夹都放过一遍之后才重新开始）。路径找不到东西时，回退到 mod 自带的音效。",
+        ["zh-tw"] = "填一個檔案：每次都播它。填一個資料夾：從裡面隨機播 .wav/.mp3，一輪之內不重複（整個資料夾都放過一遍之後才重新開始）。路徑找不到東西時，回退到 mod 自帶的音效。",
     },
     volume = {
         en = "Volume",

@@ -23,6 +23,10 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
     voice, mixed by the OS). Low latency, real polyphony, no callbacks.
   - **Fallback:** LuaJIT FFI straight into `winmm.dll` — a pool of concurrent
     MCI `waveaudio` instances (WAV) or a single MCI instance (MP3/other).
+- **Which sound plays** is decided by the `Sound file or folder` option: a *file* plays that
+  file on every push, a *folder* plays a random `.wav`/`.mp3` inside it. The folder mode uses
+  a shuffled bag, so nothing repeats until every sound in the folder has been played once.
+  The mod ships its own collection in `assets\sfx` and points there by default.
 - **Volume** (0–100) is applied by scaling the samples in software, on both
   backends. The native player deliberately does **not** call `waveOutSetVolume`:
   on Windows that moves the volume of the whole audio session, so the mod's
@@ -33,13 +37,13 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
 
 1. Copy the `ciallo` folder into your game's `mods` folder.
 2. Add `ciallo` to `mods\mod_load_order.txt`.
-3. Launch and press the **Test sound** button in Mod Options — the sound ships
-   inside the mod at `assets\Ciallo~.wav`, so it works out of the box.
-4. To use your own sound file, set `Sound file path` in Mod Options to any
-   **absolute** path on disk (e.g. `D:/Sounds/ciallo.wav`); leave it at the
-   default (`../mods/ciallo/assets/Ciallo~.wav`) to keep using the bundled file.
-   If a configured file is missing, the mod auto-tries `.wav`/`.mp3` variants of
-   that path.
+3. Launch and press the **Test sound** button in Mod Options — 18 sounds ship inside the
+   mod in `assets\sfx` (plus the original `assets\Ciallo~.wav`), and the default option value
+   points at that folder, so it works out of the box and rotates through them.
+4. To use your own sounds, set `Sound file or folder` in Mod Options to any **absolute** path
+   on disk: an audio file (e.g. `D:/Sounds/ciallo.wav`) to always play that one, or a folder
+   (e.g. `D:/Sounds/ciallo`) to play a random file from it. A file path that is missing still
+   auto-tries `.wav`/`.mp3` variants.
 5. Go push some heretics.
 
 > **Note about the file name:** avoid characters the in-game font cannot render
@@ -76,7 +80,7 @@ powershell -NoProfile -File tests\run_tests.ps1 -RebuildDll
 
 | Setting | Description |
 | --- | --- |
-| Sound file path | Full path to the sound file (WAV recommended, MP3 supported). |
+| Sound file or folder | A path to one audio file (always played), or to a folder (a random .wav/.mp3 inside it is played, without repeating until the folder has been used up). WAV recommended, MP3 supported. Missing paths fall back to the sounds shipped with the mod. |
 | Overlapping layers (WAV) | How many sounds may play on top of each other (1–8, default 4). Rapid pushes start a new layer instead of cutting the previous one; once all layers are busy, the oldest is restarted. |
 | Volume | Volume of this mod's sound, 0–100%. Applies to both backends, from the next sound onwards. Only this mod's playback is scaled — the game's music, the game's sound effects and the Windows volume are not affected. |
 | Test sound | Plays the configured file once. |
@@ -87,8 +91,9 @@ powershell -NoProfile -File tests\run_tests.ps1 -RebuildDll
 - **Overlap**: the WAV player keeps a pool of concurrent voices (default 4), so
   rapid pushes layer on top of each other instead of cutting off the previous
   sound. MP3 keeps a single instance (restarts each push).
-- The sound ships with the mod at `assets\Ciallo~.wav`; replace it in place or
-  point the `Sound file path` option at your own file.
+- 18 sounds ship in `assets\sfx`; the original `assets\Ciallo~.wav` is kept as the
+  bundled single-file fallback. Point the option at a file to always hear that file, or at any
+  folder of your own `.wav`/`.mp3` files to rotate through those.
 - **Updating from 1.1.0 or earlier:** those builds set the volume through the
   audio session, so your Darktide level in the Windows volume mixer may have
   been left at the last mod volume you used (that is also why the game's music

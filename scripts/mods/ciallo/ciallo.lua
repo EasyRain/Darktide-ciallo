@@ -13,10 +13,15 @@
 -- So hooking _push plays the sound only when a push really goes out.
 local mod = get_mod("ciallo")
 local AudioPlayer = Mods.file.dofile("ciallo/scripts/mods/ciallo/audio_player")
+local SoundPool = Mods.file.dofile("ciallo/scripts/mods/ciallo/sound_pool")
 
--- Default sound: a copy shipped inside the mod (assets/Ciallo~.wav).
--- Override it anytime with the "sound_path" option (absolute path allowed).
+-- The "sound_path" option decides what plays:
+--   a file   -> that file, every push
+--   a folder -> a random .wav/.mp3 inside it (shuffled bag: nothing repeats until the
+--               whole folder has been used once)
+-- Both fall back to the sounds shipped inside the mod.
 local DEFAULT_SOUND_PATH = "../mods/ciallo/assets/Ciallo~.wav"
+local DEFAULT_SOUND_FOLDER = "../mods/ciallo/assets/sfx"
 local SOUND_ALIASES = { ".wav", ".mp3" }
 
 local warned = false
@@ -27,13 +32,9 @@ local function dbg(fmt, ...)
     end
 end
 
--- Resolve the configured path; if the file is missing, try the same path with
+-- Resolve a configured *file* path; if the file is missing, try the same path with
 -- .wav / .mp3 extensions swapped in (so converting the file just works).
-local function resolve_sound_path()
-    local configured = mod:get("sound_path")
-    if configured == nil or configured == "" then
-        configured = DEFAULT_SOUND_PATH
-    end
+local function resolve_sound_file(configured)
     if AudioPlayer.file_exists(configured) then
         return configured
     end
@@ -50,6 +51,55 @@ local function resolve_sound_path()
     return nil
 end
 
+-- Build the pool: a real file wins, a folder gives a random bag, and anything that does
+-- not resolve falls back to the sounds shipped with the mod.
+local pool = SoundPool.new()
+
+local function build_pool()
+    local configured = mod:get("sound_path")
+    if configured == nil or configured == "" then
+        configured = DEFAULT_SOUND_FOLDER
+    end
+
+    local file = resolve_sound_file(configured)
+    if file then
+        pool:set_single(file)
+        dbg("sound: single file %s", file)
+        return true
+    end
+
+    local files, reason = AudioPlayer.list_sounds(configured)
+    if files and #files > 0 then
+        pool:set_files(files)
+        dbg("sound: %d sounds from %s", #files, configured)
+        return true
+    end
+
+    -- nothing usable there: fall back to the bundled sounds
+    local default_file = resolve_sound_file(DEFAULT_SOUND_PATH)
+    if default_file then
+        pool:set_single(default_file)
+        dbg("sound: falling back to %s (%s)", default_file, tostring(reason))
+        return true
+    end
+    local default_files = AudioPlayer.list_sounds(DEFAULT_SOUND_FOLDER)
+    if default_files and #default_files > 0 then
+        pool:set_files(default_files)
+        dbg("sound: falling back to %d bundled sounds", #default_files)
+        return true
+    end
+
+    pool:set_files({})
+    return false
+end
+
+local function describe_pool()
+    if pool:is_single() then
+        return "single file"
+    end
+    return tostring(pool:count()) .. " sounds, random"
+end
+
 local function play_push_sound()
     if not mod:is_enabled() then
         return
@@ -58,11 +108,11 @@ local function play_push_sound()
     AudioPlayer.set_pool_size(mod:get("voices") or 4)
     AudioPlayer.set_volume(mod:get("volume") or 100)
 
-    local path = resolve_sound_path()
+    local path = pool:pick()
     if not path then
         if not warned then
             warned = true
-            mod:warning("Ciallo sound file not found. Check the 'sound_path' option. Looked for: " .. tostring(mod:get("sound_path") or DEFAULT_SOUND_PATH))
+            mod:warning("Nothing to play. Set 'sound_path' to an audio file or to a folder of .wav/.mp3 files. Looked at: " .. tostring(mod:get("sound_path") or DEFAULT_SOUND_FOLDER))
         end
         return
     end
@@ -149,12 +199,18 @@ end
 --                              Used as fallback in case a game update renames
 --                              ActionPush internals.
 local function patch()
+    local os_lib = Mods and Mods.lua and Mods.lua.os
+    if os_lib and os_lib.time then
+        math.randomseed(os_lib.time())
+    end
+    build_pool()
+
     -- Primary: ActionPush._push
     local ok, ActionPush = pcall(require, "scripts/extension_systems/weapon/actions/action_push")
     if ok and type(ActionPush) == "table" and type(ActionPush._push) == "function" then
         local hooked = pcall(mod.hook_safe, mod, ActionPush, "_push", on_push_executed)
         if hooked then
-            mod:info("Ciallo push sound armed (ActionPush._push). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
+            mod:info("Ciallo push sound armed (ActionPush._push). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), describe_pool())
             return true
         end
         mod:warning("Could not hook ActionPush._push. Trying lower-level fallback.")
@@ -169,7 +225,7 @@ local function patch()
     if ok2 and type(PushAttack) == "table" and type(PushAttack.push) == "function" then
         local hooked2 = pcall(mod.hook_safe, mod, PushAttack, "push", on_push_attack_executed)
         if hooked2 then
-            mod:info("Ciallo push sound armed (PushAttack.push fallback). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), tostring(resolve_sound_path() or "FILE MISSING"))
+            mod:info("Ciallo push sound armed (PushAttack.push fallback). Backend: %s. Sound: %s", tostring(AudioPlayer.backend or "?"), describe_pool())
             return true
         end
         mod:warning("Could not hook PushAttack.push. Push sound disabled.")
@@ -188,8 +244,9 @@ end
 -- Called when the sound_path option is edited.
 function mod.on_sound_path_changed()
     warned = false
-    AudioPlayer.close() -- reopen with the new file on next push
-    dbg("sound path changed to: %s", tostring(mod:get("sound_path")))
+    AudioPlayer.close() -- reopen the next file cleanly
+    build_pool()
+    dbg("sound path changed to: %s (%s)", tostring(mod:get("sound_path")), describe_pool())
 end
 
 function mod.on_all_mods_loaded()

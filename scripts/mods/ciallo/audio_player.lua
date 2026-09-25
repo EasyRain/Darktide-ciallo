@@ -107,6 +107,30 @@ local function to_utf16(str)
     return buf
 end
 
+-- UTF-16 code units (as returned by FindFirstFileW) -> UTF-8
+local function utf16_to_utf8(units)
+    local out = {}
+    local i = 0
+    while units[i] ~= 0 do
+        local cp = units[i]
+        i = i + 1
+        if cp >= 0xD800 and cp < 0xDC00 and units[i] and units[i] >= 0xDC00 and units[i] < 0xE000 then
+            cp = 0x10000 + (cp - 0xD800) * 0x400 + (units[i] - 0xDC00)
+            i = i + 1
+        end
+        if cp < 0x80 then
+            out[#out + 1] = string.char(cp)
+        elseif cp < 0x800 then
+            out[#out + 1] = string.char(0xC0 + bit.rshift(cp, 6), 0x80 + bit.band(cp, 0x3F))
+        elseif cp < 0x10000 then
+            out[#out + 1] = string.char(0xE0 + bit.rshift(cp, 12), 0x80 + bit.band(bit.rshift(cp, 6), 0x3F), 0x80 + bit.band(cp, 0x3F))
+        else
+            out[#out + 1] = string.char(0xF0 + bit.rshift(cp, 18), 0x80 + bit.band(bit.rshift(cp, 12), 0x3F), 0x80 + bit.band(bit.rshift(cp, 6), 0x3F), 0x80 + bit.band(cp, 0x3F))
+        end
+    end
+    return table.concat(out)
+end
+
 local function ends_with(str, suffix)
     return str:sub(-#suffix):lower() == suffix:lower()
 end
@@ -229,6 +253,93 @@ function M.close_wav_pool()
     M._wav_aliases = {}
     M._wav_path = nil
     M._wav_cursor = 0
+end
+
+-- #############################################################
+-- # Directory listing (folder mode: play a random sound from a folder)
+-- #
+-- # DML hands over io/os/ffi but no lfs, and Lua's io cannot enumerate a directory,
+-- # so this goes through kernel32 with FFI. The private type is prefixed with the mod
+-- # name because FFI declarations live in the shared VM and survive mod reloads; a
+-- # redeclaration is ignored on purpose (see init_listing), so a reload cannot break it.
+-- #############################################################
+local kernel32 = nil
+
+local function init_listing()
+    if kernel32 then
+        return true
+    end
+    if not (ffi and type(ffi.cdef) == "function" and type(ffi.load) == "function") then
+        return false
+    end
+    pcall(ffi.cdef, [[
+        typedef struct {
+            uint32_t dwFileAttributes;
+            uint32_t ftCreationTime[2];
+            uint32_t ftLastAccessTime[2];
+            uint32_t ftLastWriteTime[2];
+            uint32_t nFileSizeHigh;
+            uint32_t nFileSizeLow;
+            uint32_t dwReserved0;
+            uint32_t dwReserved1;
+            uint16_t cFileName[260];
+            uint16_t cAlternateFileName[14];
+        } ciallo_find_data_t;
+        void* __stdcall FindFirstFileW(const uint16_t* lpFileName, ciallo_find_data_t* lpFindFileData);
+        int __stdcall FindNextFileW(void* hFindFile, ciallo_find_data_t* lpFindFileData);
+        int __stdcall FindClose(void* hFindFile);
+        uint32_t __stdcall GetLastError(void);
+    ]])
+    local load_ok, lib = pcall(ffi.load, "kernel32")
+    if not (load_ok and lib) then
+        return false
+    end
+    -- the declarations may already exist from a previous load; the symbols are what matter
+    local symbols_ok = pcall(function()
+        return lib.FindFirstFileW and lib.FindNextFileW and lib.FindClose
+    end)
+    if not symbols_ok then
+        return false
+    end
+    kernel32 = lib
+    return true
+end
+
+-- Returns an array of full paths (dir + "/" + name) of the .wav/.mp3 files in dir,
+-- or nil + reason. Only used when the configured path is not a file.
+function M.list_sounds(dir)
+    if not dir or dir == "" then
+        return nil, "no path"
+    end
+    if not init_listing() then
+        return nil, "directory listing is unavailable"
+    end
+    local pattern = to_utf16(dir .. "\\*")
+    local data = ffi.new("ciallo_find_data_t[1]")
+    local handle = kernel32.FindFirstFileW(pattern, data)
+    if handle == nil or ffi.cast("intptr_t", handle) == -1 then
+        return nil, "not a folder (" .. tostring(kernel32.GetLastError()) .. ")"
+    end
+
+    local base = dir:gsub("[\\/]+$", "")
+    local found = {}
+    repeat
+        local name = utf16_to_utf8(data[0].cFileName)
+        local is_dir = bit.band(data[0].dwFileAttributes, 0x10) ~= 0
+        if name ~= "." and name ~= ".." and not is_dir then
+            local lower = name:lower()
+            if lower:sub(-4) == ".wav" or lower:sub(-4) == ".mp3" then
+                found[#found + 1] = base .. "/" .. name
+            end
+        end
+    until kernel32.FindNextFileW(handle, data) == 0
+    kernel32.FindClose(handle)
+
+    if #found == 0 then
+        return nil, "no .wav/.mp3 files"
+    end
+    table.sort(found)
+    return found
 end
 
 -- #############################################################

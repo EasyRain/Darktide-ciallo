@@ -14,6 +14,7 @@
 [CmdletBinding()]
 param(
     [string]$VcVars = 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat',
+    [string]$LuaJit = 'D:\Tools\Lua\luajit\src\luajit.exe',
     [switch]$RebuildDll,
     [switch]$KeepArtifacts
 )
@@ -58,6 +59,29 @@ Write-Host '--- running tests'
 & $testExe
 $testExit = $LASTEXITCODE
 Step 'test_audio_volume.exe' ($testExit -eq 0) "exit $testExit"
+
+# --- 2b. Lua tests (sound pool + folder scan) --------------------------------------
+Write-Host ''
+Write-Host '--- lua tests'
+$lua = $LuaJit
+if (-not (Test-Path -LiteralPath $lua)) {
+    $found = Get-Command luajit -ErrorAction SilentlyContinue
+    if ($found) { $lua = $found.Source } else { $lua = $null }
+}
+if (-not $lua) {
+    Step 'lua tests skipped' $false 'luajit not found (pass -LuaJit <path>)'
+} else {
+    Push-Location $repo
+    try {
+        foreach ($test in @('tests\test_sound_pool.lua', 'tests\test_audio_files.lua')) {
+            if (-not (Test-Path -LiteralPath $test)) { Step (Split-Path -Leaf $test) $false 'missing'; continue }
+            & $lua $test
+            Step (Split-Path -Leaf $test) ($LASTEXITCODE -eq 0) "exit $LASTEXITCODE"
+        }
+    } finally {
+        Pop-Location
+    }
+}
 
 # --- 3. optional: rebuild the DLL --------------------------------------------------
 if ($RebuildDll) {
