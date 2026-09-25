@@ -47,20 +47,24 @@ if (-not (Test-Path -LiteralPath $testC)) {
 }
 
 Write-Host ''
-Write-Host '--- compiling tests'
-$compile = cmd /c "`"$VcVars`" >nul 2>&1 && cd /d `"$repo`" && cl /nologo /O2 /utf-8 `"$testC`" /Fe:`"$testExe`"" 2>&1
-if (-not (Test-Path -LiteralPath $testExe)) {
-    Write-Host ($compile | Out-String)
-    Write-Host '[FAIL] compilation did not produce the test executable'
-    exit 1
+Write-Host '--- compiling and running the C tests'
+foreach ($name in @('test_audio_volume', 'test_overlap')) {
+    $source = Join-Path $PSScriptRoot ($name + '.c')
+    $exe = Join-Path $PSScriptRoot ($name + '.exe')
+    if (-not (Test-Path -LiteralPath $source)) { Step $name $false 'missing source'; continue }
+    Remove-Item -LiteralPath $exe -Force -ErrorAction SilentlyContinue
+    $compile = cmd /c "`"$VcVars`" >nul 2>&1 && cd /d `"$repo`" && cl /nologo /O2 /utf-8 `"$source`" /Fe:`"$exe`"" 2>&1
+    if (-not (Test-Path -LiteralPath $exe)) {
+        Write-Host ($compile | Out-String)
+        Step ($name + '.exe') $false 'compilation failed'
+        continue
+    }
+    & $exe
+    Step ($name + '.exe') ($LASTEXITCODE -eq 0) "exit $LASTEXITCODE"
+    Remove-Item -LiteralPath $exe -Force -ErrorAction SilentlyContinue
 }
 
-Write-Host '--- running tests'
-& $testExe
-$testExit = $LASTEXITCODE
-Step 'test_audio_volume.exe' ($testExit -eq 0) "exit $testExit"
-
-# --- 2b. Lua tests (sound pool + folder scan) --------------------------------------
+# --- 2b. Lua tests (sound pool + folder scan + MCI pools) --------------------------
 Write-Host ''
 Write-Host '--- lua tests'
 $lua = $LuaJit
@@ -73,7 +77,7 @@ if (-not $lua) {
 } else {
     Push-Location $repo
     try {
-        foreach ($test in @('tests\test_sound_pool.lua', 'tests\test_audio_files.lua')) {
+        foreach ($test in @('tests\test_sound_pool.lua', 'tests\test_audio_files.lua', 'tests\test_mci_overlap.lua')) {
             if (-not (Test-Path -LiteralPath $test)) { Step (Split-Path -Leaf $test) $false 'missing'; continue }
             & $lua $test
             Step (Split-Path -Leaf $test) ($LASTEXITCODE -eq 0) "exit $LASTEXITCODE"
@@ -103,7 +107,16 @@ if ($RebuildDll) {
 
 # --- 4. tidy up ---------------------------------------------------------------------
 if (-not $KeepArtifacts) {
-    Remove-Item $testExe, (Join-Path $PSScriptRoot 'test_audio_volume.obj'), (Join-Path $repo 'test_audio_volume.obj'), (Join-Path $PSScriptRoot 'test_audio_volume.lib'), (Join-Path $PSScriptRoot 'test_audio_volume.exp') -Force -ErrorAction SilentlyContinue
+    foreach ($name in @('test_audio_volume', 'test_overlap')) {
+        Remove-Item -Force -ErrorAction SilentlyContinue `
+            (Join-Path $PSScriptRoot ($name + '.exe')), `
+            (Join-Path $PSScriptRoot ($name + '.obj')), `
+            (Join-Path $PSScriptRoot ($name + '.lib')), `
+            (Join-Path $PSScriptRoot ($name + '.exp')), `
+            (Join-Path $repo ($name + '.obj')), `
+            (Join-Path $repo ($name + '.lib')), `
+            (Join-Path $repo ($name + '.exp'))
+    }
 }
 
 Write-Host ''

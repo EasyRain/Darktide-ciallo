@@ -136,9 +136,10 @@ local function ends_with(str, suffix)
 end
 
 M.pool_size = 4
-M._wav_path = nil
-M._wav_aliases = {}
-M._wav_cursor = 0
+M._pools = {}        -- path -> { aliases = {...}, cursor = 0, prefix = ..., last_use = n }
+M._pool_cache = 4    -- how many different files keep their alias pool open at once
+M._pool_seq = 0
+M._use_counter = 0
 M._mp3_alias = nil
 M._volume = 100
 
@@ -183,25 +184,61 @@ local function set_alias_volume(alias_name)
     mci("setaudio " .. alias_name .. " volume to " .. math.floor(percent * 10))
 end
 
-local function ensure_wav_pool(path)
-    if M._wav_path == path and #M._wav_aliases > 0 then
-        return true
+-- One alias pool per file, kept open for the most recently used files. Random playback
+-- needs this: with a single pool every path change closed the previous aliases, which cut
+-- off the sound that was still playing.
+local function close_pool(pool)
+    for i = 1, #pool.aliases do
+        mci("close " .. pool.aliases[i])
     end
-    M.close_wav_pool()
-    M._wav_path = path
+    pool.aliases = {}
+end
+
+local function ensure_wav_pool(path)
+    local pool = M._pools[path]
+    if pool then
+        M._use_counter = M._use_counter + 1
+        pool.last_use = M._use_counter
+        return pool
+    end
+
+    -- drop the least recently used pool once the cache is full
+    local count = 0
+    for _ in pairs(M._pools) do
+        count = count + 1
+    end
+    if count >= M._pool_cache then
+        local oldest, oldest_key = nil, nil
+        for key, candidate in pairs(M._pools) do
+            if not oldest or candidate.last_use < oldest.last_use then
+                oldest, oldest_key = candidate, key
+            end
+        end
+        if oldest then
+            close_pool(oldest)
+            M._pools[oldest_key] = nil
+        end
+    end
+
+    M._pool_seq = M._pool_seq + 1
+    M._use_counter = M._use_counter + 1
+    local new_pool = { aliases = {}, cursor = 0, prefix = "ciallo_wav_" .. M._pool_seq, last_use = M._use_counter }
     for i = 1, math.max(1, M.pool_size) do
-        local alias_name = "ciallo_wav_" .. i
+        local alias_name = new_pool.prefix .. "_" .. i
         local rc = mci('open "' .. path .. '" type waveaudio alias ' .. alias_name)
         if rc == 0 then
-            M._wav_aliases[#M._wav_aliases + 1] = alias_name
+            new_pool.aliases[#new_pool.aliases + 1] = alias_name
             set_alias_volume(alias_name)
         else
             M.last_error = "MCI open #" .. i .. " failed (" .. mci_error_string(rc) .. ")"
             break
         end
     end
-    M._wav_cursor = 0
-    return #M._wav_aliases > 0
+    if #new_pool.aliases == 0 then
+        return nil
+    end
+    M._pools[path] = new_pool
+    return new_pool
 end
 
 local function ensure_mp3_alias(path)
@@ -224,11 +261,12 @@ end
 
 local function mci_play(path)
     if ends_with(path, ".wav") then
-        if not ensure_wav_pool(path) then
+        local pool = ensure_wav_pool(path)
+        if not pool then
             return play_sound_fallback(path)
         end
-        M._wav_cursor = M._wav_cursor % #M._wav_aliases + 1
-        local rc = mci("play " .. M._wav_aliases[M._wav_cursor] .. " from 0")
+        pool.cursor = pool.cursor % #pool.aliases + 1
+        local rc = mci("play " .. pool.aliases[pool.cursor] .. " from 0")
         if rc ~= 0 then
             M.last_error = "MCI play failed (" .. mci_error_string(rc) .. ")"
             return false
@@ -246,13 +284,12 @@ local function mci_play(path)
     return true
 end
 
+-- closes every file's pool (used when the voice count changes or the mod unloads)
 function M.close_wav_pool()
-    for i = 1, #M._wav_aliases do
-        mci("close " .. M._wav_aliases[i])
+    for _, pool in pairs(M._pools) do
+        close_pool(pool)
     end
-    M._wav_aliases = {}
-    M._wav_path = nil
-    M._wav_cursor = 0
+    M._pools = {}
 end
 
 -- #############################################################
@@ -393,8 +430,10 @@ function M.set_volume(percent)
         pcall(native.ciallo_set_volume, M._volume)
     end
     -- also covers files played through MCI on a machine that has the DLL (mp3 and friends)
-    for i = 1, #M._wav_aliases do
-        set_alias_volume(M._wav_aliases[i])
+    for _, pool in pairs(M._pools) do
+        for i = 1, #pool.aliases do
+            set_alias_volume(pool.aliases[i])
+        end
     end
     if M._mp3_alias then
         set_alias_volume(M._mp3_alias)
