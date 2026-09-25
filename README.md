@@ -23,6 +23,10 @@ A tiny Darktide mod: plays **Ciallo~** every time you **push** (hold right mouse
     voice, mixed by the OS). Low latency, real polyphony, no callbacks.
   - **Fallback:** LuaJIT FFI straight into `winmm.dll` — a pool of concurrent
     MCI `waveaudio` instances (WAV) or a single MCI instance (MP3/other).
+- **Volume** (0–100) is applied by scaling the samples in software, on both
+  backends. The native player deliberately does **not** call `waveOutSetVolume`:
+  on Windows that moves the volume of the whole audio session, so the mod's
+  slider also dragged the game's own music up and down with it.
 - Non-ASCII paths are supported.
 
 ## Install
@@ -60,13 +64,21 @@ cl /nologo /O2 /LD /utf-8 src\ciallo_sfx.c /Fe:bin\ciallo_sfx.dll /link winmm.li
 Then copy `bin\ciallo_sfx.dll` into your installed mod's `bin\` folder and
 restart the game — the native backend is picked up automatically.
 
+`tests\run_tests.ps1` checks the volume behaviour without the game (it compiles
+`tests\test_audio_volume.c`, which includes the C source, and also fails if a
+device-volume call ever comes back):
+
+```powershell
+powershell -NoProfile -File tests\run_tests.ps1 -RebuildDll
+```
+
 ## Options
 
 | Setting | Description |
 | --- | --- |
 | Sound file path | Full path to the sound file (WAV recommended, MP3 supported). |
 | Overlapping layers (WAV) | How many sounds may play on top of each other (1–8, default 4). Rapid pushes start a new layer instead of cutting the previous one; once all layers are busy, the oldest is restarted. |
-| Volume | MCI volume 0–100% (MP3 path only; WAV follows system volume). |
+| Volume | Volume of this mod's sound, 0–100%. Applies to both backends, from the next sound onwards. Only this mod's playback is scaled — the game's music, the game's sound effects and the Windows volume are not affected. |
 | Test sound | Plays the configured file once. |
 
 ## Notes
@@ -77,4 +89,9 @@ restart the game — the native backend is picked up automatically.
   sound. MP3 keeps a single instance (restarts each push).
 - The sound ships with the mod at `assets\Ciallo~.wav`; replace it in place or
   point the `Sound file path` option at your own file.
+- **Updating from 1.1.0 or earlier:** those builds set the volume through the
+  audio session, so your Darktide level in the Windows volume mixer may have
+  been left at the last mod volume you used (that is also why the game's music
+  moved with the mod's slider). Set that slider back to what you want once — the
+  new build never touches it.
 - License: MIT

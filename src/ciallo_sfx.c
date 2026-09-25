@@ -25,6 +25,9 @@ typedef struct {
     WAVEHDR  hdr;
     BOOL     open;
     BOOL     prepared;
+    BYTE    *buf;        /* per-voice copy of the PCM, scaled to g_volume_percent */
+    DWORD    buf_cap;
+    int      buf_volume; /* volume the buffer currently holds; -1 = needs a rescale */
 } Voice;
 
 static Voice g_voices[MAX_VOICES];
@@ -180,6 +183,10 @@ static void close_all_voices(void) {
             waveOutClose(v->h);
         }
         v->open = FALSE;
+        free(v->buf);
+        v->buf = NULL;
+        v->buf_cap = 0;
+        v->buf_volume = -1;
     }
 }
 
@@ -194,6 +201,40 @@ static void full_teardown(void) {
     g_cursor = 0;
 }
 
+/* ---- volume: scale the samples, never the device ----------------------
+ *
+ * waveOutSetVolume() would change the volume of the whole audio session (the
+ * game's own audio included, and it persists in the Windows volume mixer), so
+ * the mod would silently overwrite the player's game volume. Scaling the PCM
+ * in software keeps the volume local to this mod's playback.
+ */
+static void scale_pcm(BYTE *dst, const BYTE *src, DWORD len, int percent, WORD bits) {
+    if (percent > 100)
+        percent = 100;
+    if (percent < 0)
+        percent = 0;
+    if (percent == 100) {
+        memcpy(dst, src, len);
+        return;
+    }
+    if (bits == 16) {
+        const short *s = (const short *)src;
+        short *d = (short *)dst;
+        DWORD n = len / 2;
+        for (DWORD i = 0; i < n; i++) {
+            d[i] = (short)((int)s[i] * percent / 100);
+        }
+        if (len & 1u) {
+            dst[len - 1] = src[len - 1];
+        }
+    } else {
+        for (DWORD i = 0; i < len; i++) {
+            int v = ((int)src[i] - 128) * percent / 100 + 128;
+            dst[i] = (BYTE)(v < 0 ? 0 : (v > 255 ? 255 : v));
+        }
+    }
+}
+
 static int ensure_voice(int i) {
     Voice *v = &g_voices[i];
     if (!v->open) {
@@ -205,9 +246,21 @@ static int ensure_voice(int i) {
             return 0;
         }
         v->open = TRUE;
-        v->hdr.lpData = (LPSTR)g_pcm;
+        if (!v->buf || v->buf_cap < g_pcm_len) {
+            BYTE *nb = (BYTE *)realloc(v->buf, g_pcm_len ? g_pcm_len : 1);
+            if (!nb) {
+                waveOutClose(v->h);
+                v->open = FALSE;
+                set_error("out of memory");
+                return 0;
+            }
+            v->buf = nb;
+            v->buf_cap = g_pcm_len;
+        }
+        v->hdr.lpData = (LPSTR)v->buf;
         v->hdr.dwBufferLength = g_pcm_len;
         v->hdr.dwUser = 0;
+        v->buf_volume = -1; /* scale before the first write */
         MMRESULT pr = waveOutPrepareHeader(v->h, &v->hdr, sizeof(WAVEHDR));
         if (pr != MMSYSERR_NOERROR) {
             waveOutClose(v->h);
@@ -216,9 +269,6 @@ static int ensure_voice(int i) {
             return 0;
         }
         v->prepared = TRUE;
-        /* volume: 16-bit per channel, low+high words */
-        DWORD vol = (DWORD)((g_volume_percent * 0xFFFFu) / 100u);
-        waveOutSetVolume(v->h, MAKELONG(vol, vol));
     }
     return 1;
 }
@@ -227,6 +277,10 @@ static int start_voice(int i) {
     Voice *v = &g_voices[i];
     if (!ensure_voice(i))
         return 0;
+    if (v->buf_volume != g_volume_percent) {
+        scale_pcm(v->buf, g_pcm, g_pcm_len, g_volume_percent, g_fmt.wBitsPerSample);
+        v->buf_volume = g_volume_percent;
+    }
     /* make sure a still-playing voice is stopped before reuse */
     if (!(v->hdr.dwFlags & WHDR_DONE)) {
         waveOutReset(v->h);
@@ -264,8 +318,11 @@ __declspec(dllexport) int __cdecl ciallo_init(int max_voices, int volume_percent
 }
 
 __declspec(dllexport) int __cdecl ciallo_play(const char *utf8_path) {
+    /* Lazily initialise, but keep the volume the caller already set: initialising
+     * with a hard-coded 100 made the first play of a process full volume (the mod
+     * calls shutdown() while loading, so the first push always landed here). */
     if (!g_initialized)
-        ciallo_init(4, 100);
+        ciallo_init(g_max_voices, g_volume_percent);
     if (!utf8_path || !utf8_path[0]) {
         set_error("empty path");
         return 0;
@@ -294,12 +351,9 @@ __declspec(dllexport) int __cdecl ciallo_play(const char *utf8_path) {
 
 __declspec(dllexport) void __cdecl ciallo_set_volume(int percent) {
     g_volume_percent = percent < 0 ? 0 : (percent > 100 ? 100 : percent);
-    DWORD vol = (DWORD)((g_volume_percent * 0xFFFFu) / 100u);
-    for (int i = 0; i < MAX_VOICES; i++) {
-        if (g_voices[i].open) {
-            waveOutSetVolume(g_voices[i].h, MAKELONG(vol, vol));
-        }
-    }
+    /* Nothing to push to the device: each voice rescales its own buffer from
+     * g_pcm right before its next write (see start_voice). A voice that is
+     * already playing keeps the volume it started with. */
 }
 
 __declspec(dllexport) void __cdecl ciallo_shutdown(void) {

@@ -20,14 +20,14 @@ return {
         ["zh-tw"] = "若檔案不存在，會自動嘗試同路徑的 .wav/.mp3 變體。",
     },
     volume = {
-        en = "Volume (MP3 path only)",
-        ["zh-cn"] = "音量（仅 MP3 路径生效）",
-        ["zh-tw"] = "音量（僅 MP3 路徑生效）",
+        en = "Volume",
+        ["zh-cn"] = "音量",
+        ["zh-tw"] = "音量",
     },
     volume_description = {
-        en = "MCI volume 0-100%. WAV playback uses the system volume.",
-        ["zh-cn"] = "MCI 音量 0-100%。WAV 播放跟随系统音量。",
-        ["zh-tw"] = "MCI 音量 0-100%。WAV 播放跟隨系統音量。",
+        en = "Volume of this mod's sound, 0-100%. Applies to both backends (WAV and MP3) and takes effect on the next sound. Only this mod's playback is scaled: the game's music and sound effects, and the Windows volume, are not affected.",
+        ["zh-cn"] = "本 mod 音效的音量，0-100%。WAV 与 MP3 两条路径都生效，改动在下一次播放时生效。只缩放本 mod 播放的声音，不会影响游戏音乐、游戏音效或系统音量。",
+        ["zh-tw"] = "本 mod 音效的音量，0-100%。WAV 與 MP3 兩條路徑都生效，改動於下一次播放時生效。只縮放本 mod 播放的聲音，不會影響遊戲音樂、遊戲音效或系統音量。",
     },
     voices = {
         en = "Overlapping layers (WAV)",

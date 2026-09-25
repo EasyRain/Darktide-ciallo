@@ -4,5 +4,6 @@
 *.lib
 *.obj
 *.exp
+tests/*.exe
 .DS_Store
 Thumbs.db
